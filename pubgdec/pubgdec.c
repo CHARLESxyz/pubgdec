@@ -108,6 +108,7 @@ static uint64 dummy_read64(dummy *dummy, void *game_addr) {
 	return ret;
 }
 
+#define READ(addr, dest, size) dummy_read(dummy, (void *)(addr), dest, size)
 #define READ8(addr) dummy_read8(dummy, (void *)(addr))
 #define READ16(addr) dummy_read16(dummy, (void *)(addr))
 #define READ32(addr) dummy_read32(dummy, (void *)(addr))
@@ -293,9 +294,9 @@ static int64 dec2(dummy *dummy, int128 *_RCX23) {
 int64 decptr(dummy *dummy, uintptr_t *x) {
 	int128 rcx22;
 	int128 rcx23;
-	dummy_read(dummy, (int128 *)x + 22, &rcx22, sizeof(int128));
-	dummy_read(dummy, (int128 *)x + 23, &rcx23, sizeof(int128));
-	int64 xor1 = dummy_read64(dummy, x + dec1(dummy, &rcx22));
+	READ((int128 *)x + 22, &rcx22, sizeof(int128));
+	READ((int128 *)x + 23, &rcx23, sizeof(int128));
+	int64 xor1 = READ64(x + dec1(dummy, &rcx22));
 	int64 xor2 = dec2(dummy, &rcx23);
 	return xor1 ^ xor2;
 }
