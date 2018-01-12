@@ -291,12 +291,12 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ READ32(GET_ADDR(0x3DEB690) + 924))) % 0x2B;
 }
 
-uint64 decptr(dummy *dummy, uintptr_t *x) {
+uint64 decptr(dummy *dummy, void *x) {
 	int128 rcx22;
 	int128 rcx23;
 	READ((int128 *)x + 22, &rcx22, sizeof(int128));
 	READ((int128 *)x + 23, &rcx23, sizeof(int128));
-	uint64 xor1 = READ64(x + dec1(dummy, &rcx22));
+	uint64 xor1 = READ64((uintptr_t *)x + dec1(dummy, &rcx22));
 	uint64 xor2 = dec2(dummy, &rcx23);
 	return xor1 ^ xor2;
 }
