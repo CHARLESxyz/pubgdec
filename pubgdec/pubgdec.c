@@ -135,7 +135,7 @@ typedef unsigned __int128 uint128;
 
 #define GET_ADDR(addr) (dummy->game_base_addr + (addr))
 
-static int64 dec1(dummy *dummy, int128 *_RCX22) {
+static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 	uint64 v1;
 	int128 v2;
 	uint8 v3;
@@ -213,7 +213,7 @@ static int64 dec1(dummy *dummy, int128 *_RCX22) {
 		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(0x3DEBA90)) ^ READ32(GET_ADDR(0x3DEB690) + 700))) % 0x2B;
 }
 
-static int64 dec2(dummy *dummy, int128 *_RCX23) {
+static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 	uint64 v1;
 	int128 v2;
 	uint8 v3;
@@ -291,12 +291,12 @@ static int64 dec2(dummy *dummy, int128 *_RCX23) {
 		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ READ32(GET_ADDR(0x3DEB690) + 924))) % 0x2B;
 }
 
-int64 decptr(dummy *dummy, uintptr_t *x) {
+uint64 decptr(dummy *dummy, uintptr_t *x) {
 	int128 rcx22;
 	int128 rcx23;
 	READ((int128 *)x + 22, &rcx22, sizeof(int128));
 	READ((int128 *)x + 23, &rcx23, sizeof(int128));
-	int64 xor1 = READ64(x + dec1(dummy, &rcx22));
-	int64 xor2 = dec2(dummy, &rcx23);
+	uint64 xor1 = READ64(x + dec1(dummy, &rcx22));
+	uint64 xor2 = dec2(dummy, &rcx23);
 	return xor1 ^ xor2;
 }
