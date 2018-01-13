@@ -1,3 +1,5 @@
+#include <stdarg.h>
+#include <stdio.h>
 #include "def.h"
 
 // https://github.com/calccrypto/uint128_t
@@ -42,6 +44,21 @@ static unsigned char _InterlockedCompareExchange128(int64 volatile *Destination,
 EXTERN unsigned char __cdecl _InterlockedCompareExchange128(int64 volatile *Destination, int64 ExchangeHigh, int64 ExchangeLow, int64 *ComparandResult);
 
 #endif
+
+/*
+debug
+*/
+
+EXTERN int __stdcall MessageBoxA(void *, const char *, const char *, int);
+
+void debug(const char *format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	char text[0x200];
+	vsprintf(text, format, ap);
+	va_end(ap);
+	MessageBoxA((void *)0, text, "debug", 0);
+}
 
 /*
 rpm
@@ -133,6 +150,29 @@ typedef unsigned __int128 uint128;
 
 #define GET_ADDR(addr) (dummy->game_base_addr + (addr))
 
+#define TABLE_SIZE 256
+
+typedef struct decrypt_struct {
+	uint8 table[TABLE_SIZE];
+	uint32 xor1;
+	uint32 xor2;
+} decrypt_struct;
+
+static decrypt_struct g_decrypt;
+
+void decinit(dummy *dummy) {
+	READ(GET_ADDR(0x3AFF120), g_decrypt.table, TABLE_SIZE);
+	g_decrypt.xor1 = READ32(700 + GET_ADDR(0x3DEB690));
+	g_decrypt.xor2 = READ32(924 + GET_ADDR(0x3DEB690));
+}
+
+static uint8 read_table(uint32 index) {
+	if (index >= TABLE_SIZE) {
+		debug("[read_table] out of bounds = %d", index);
+	}
+	return g_decrypt.table[index];
+}
+
 static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 	uint64 v1;
 	int128 v2;
@@ -143,21 +183,11 @@ static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 	uint64 v7;
 	uint64 v8;
 	uint64 v9;
-	int64 v10;
 	uint8 v11;
-	int64 v12;
 	uint16 v13;
 	uint v14;
-	int64 v15;
 	char v16;
-	int64 v17;
 	int v19;
-	int64 v20[4];
-	int64 v24[4];
-	v24[0] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[1] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[2] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[3] = GET_ADDR(0x3AFF120);
 	do
 	{
 		v2 = *_RCX22;
@@ -167,10 +197,6 @@ static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 		v4 = v2.low;
 		v5 = WORD4(v2);
 	} while (!v3);
-	v20[0] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[1] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[2] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[3] = GET_ADDR(0x3AFF120);
 	v6 = 2067041945;
 	v7 = ((_DWORD)v1
 		+ v4
@@ -186,11 +212,9 @@ static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 	v9 = 0;
 	do
 	{
-		v10 = v20[0]; // dummy code: v20[READ8((uint8)(v7 + v9) + v20) & 3];
 		v11 = v6 + v9++;
-		v12 = v20[0]; // dummy code: v20[READ8(v11 + v20) & 3];
-		LODWORD(v7) = ((READ8(BYTE2(v7) + v10) | (((READ8((uint8)v7 + v10) << 8) | READ8(BYTE1(v7) + v12)) << 8)) << 8) | READ8((v7 >> 24) + v10);
-		v6 = READ8(((uint64)v6 >> 24) + v12) | ((READ8(BYTE2(v6) + v10) | (((READ8((uint8)v6 + v12) << 8) | READ8(BYTE1(v6) + v12)) << 8)) << 8);
+		LODWORD(v7) = ((read_table(BYTE2(v7)) | (((read_table((uint8)v7) << 8) | read_table(BYTE1(v7))) << 8)) << 8) | read_table((v7 >> 24));
+		v6 = read_table((uint64)v6 >> 24) | ((read_table(BYTE2(v6)) | (((read_table((uint8)v6) << 8) | read_table(BYTE1(v6))) << 8)) << 8);
 	} while (v9 < 3);
 	if ((v6 ^ (uint)v7) != v19)
 	{
@@ -201,14 +225,13 @@ static uint64 dec1(dummy *dummy, int128 *_RCX22) {
 	do
 	{
 		v14 = v13;
-		v15 = v24[0]; // dummy code: v24[READ8(READ8((uint8)(v8 ^ v13 ^ 0x1C) + v20) + v20) & 3];
 		v16 = v8++ + 2;
-		v17 = v24[0]; // dummy code: v24[READ8(READ8((uint8)(v16 ^ 0x1C) + v20) + v20) & 3];
-		v13 = READ8(READ8(((v14 ^ 0x4400u) >> 8) + v15) + v17) | (uint16)(READ8(READ8((uint8)(v14 ^ 0x55) + v15) + v17) << 8);
+		v13 = read_table(read_table((v14 ^ 0x4400u) >> 8)) | (uint16)(read_table(read_table((uint8)(v14 ^ 0x55))) << 8);
 	} while (v8 < 5);
-	return ~(READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(0x3DEBE90)) ^
+	return ~(
+		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(0x3DEBE90)) ^
 		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(0x3DEB290)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(0x3DEBA90)) ^ READ32(GET_ADDR(0x3DEB690) + 700))) % 0x2B;
+		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(0x3DEBA90)) ^ g_decrypt.xor1)) % 0x2B;
 }
 
 static uint64 dec2(dummy *dummy, int128 *_RCX23) {
@@ -221,21 +244,11 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 	uint64 v7;
 	uint64 v8;
 	uint64 v9;
-	int64 v10;
 	uint8 v11;
-	int64 v12;
 	uint16 v13;
 	uint v14;
-	int64 v15;
 	char v16;
-	int64 v17;
 	int v19;
-	int64 v20[4];
-	int64 v24[4];
-	v24[0] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[1] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[2] = GET_ADDR(0x3AFF120);
-	// dummy code: v24[3] = GET_ADDR(0x3AFF120);
 	do
 	{
 		v2 = *_RCX23;
@@ -245,10 +258,6 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 		v4 = v2.low;
 		v5 = WORD4(v2);
 	} while (!v3);
-	v20[0] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[1] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[2] = GET_ADDR(0x3AFF120);
-	// dummy code: v20[3] = GET_ADDR(0x3AFF120);
 	v6 = 2067041945;
 	v7 = ((_DWORD)v1
 		+ v4
@@ -264,11 +273,9 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 	v9 = 0;
 	do
 	{
-		v10 = v20[0]; // dummy code: v20[READ8((uint8)(v7 + v9) + v20) & 3];
 		v11 = v6 + v9++;
-		v12 = v20[0]; // dummy code: v20[READ8(v11 + v20) & 3];
-		LODWORD(v7) = ((READ8(BYTE2(v7) + v10) | (((READ8((uint8)v7 + v10) << 8) | READ8(BYTE1(v7) + v12)) << 8)) << 8) | READ8((v7 >> 24) + v10);
-		v6 = READ8(((uint64)v6 >> 24) + v12) | ((READ8(BYTE2(v6) + v10) | (((READ8((uint8)v6 + v12) << 8) | READ8(BYTE1(v6) + v12)) << 8)) << 8);
+		LODWORD(v7) = ((read_table(BYTE2(v7)) | (((read_table((uint8)v7) << 8) | read_table(BYTE1(v7))) << 8)) << 8) | read_table(v7 >> 24);
+		v6 = read_table((uint64)v6 >> 24) | ((read_table(BYTE2(v6)) | (((read_table((uint8)v6) << 8) | read_table(BYTE1(v6))) << 8)) << 8);
 	} while (v9 < 3);
 	if ((v6 ^ (uint)v7) != v19)
 	{
@@ -279,14 +286,13 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 	do
 	{
 		v14 = v13;
-		v15 = v24[0]; // dummy code: v24[READ8(READ8((uint8)(v8 ^ v13 ^ 0xAC) + v20) + v20) & 3];
 		v16 = v8++ + 2;
-		v17 = v24[0]; // dummy code: v24[READ8(READ8((uint8)(v16 ^ 0xAC) + v20) + v20) & 3];
-		v13 = READ8(READ8(((v14 ^ 0x4400u) >> 8) + v17) + v15) | (uint16)(READ8(READ8((uint8)(v14 ^ 0x55) + v17) + v15) << 8);
+		v13 = read_table(read_table((v14 ^ 0x4400u) >> 8)) | (uint16)(read_table(read_table((uint8)(v14 ^ 0x55))) << 8);
 	} while (v8 < 5);
-	return ~(READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(0x3DEBE90)) ^
+	return ~(
+		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(0x3DEBE90)) ^
 		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(0x3DEB290)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ READ32(GET_ADDR(0x3DEB690) + 924))) % 0x2B;
+		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ g_decrypt.xor2)) % 0x2B;
 }
 
 uint64 decptr(dummy *dummy, void *x) {
