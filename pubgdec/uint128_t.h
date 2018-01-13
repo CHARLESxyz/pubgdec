@@ -372,12 +372,12 @@ template <typename T> T & operator>>=(T & lhs, const uint128_t & rhs) {
 	return lhs = static_cast <T> (uint128_t(lhs) >> rhs);
 }
 
+/*
 // Comparison Operators
 template <typename T> bool operator==(const T & lhs, const uint128_t & rhs) {
 	return (!rhs.upper() && ((uint64_t)lhs == rhs.lower()));
 }
 
-/*
 template <typename T> bool operator!=(const T & lhs, const uint128_t & rhs) {
 	return (rhs.upper() | ((uint64_t)lhs != rhs.lower()));
 }
