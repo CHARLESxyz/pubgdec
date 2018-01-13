@@ -1,5 +1,3 @@
-#include <stdarg.h>
-#include <stdio.h>
 #include "def.h"
 
 // https://github.com/calccrypto/uint128_t
@@ -296,7 +294,7 @@ uint64 decptr(dummy *dummy, void *x) {
 	int128 rcx23;
 	READ((int128 *)x + 22, &rcx22, sizeof(int128));
 	READ((int128 *)x + 23, &rcx23, sizeof(int128));
-	uint64 xor1 = READ64((uintptr_t *)x + dec1(dummy, &rcx22));
+	uint64 xor1 = READ64((uint64 *)x + dec1(dummy, &rcx22));
 	uint64 xor2 = dec2(dummy, &rcx23);
 	return xor1 ^ xor2;
 }
