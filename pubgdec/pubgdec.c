@@ -295,9 +295,10 @@ static uint64 dec2(dummy *dummy, int128 *_RCX23) {
 		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ g_decrypt.xor2)) % 0x2B;
 }
 
+volatile int128 rcx22;
+volatile int128 rcx23;
+
 uint64 decptr(dummy *dummy, void *x) {
-	int128 rcx22;
-	int128 rcx23;
 	READ((int128 *)x + 22, &rcx22, sizeof(int128));
 	READ((int128 *)x + 23, &rcx23, sizeof(int128));
 	uint64 xor1 = READ64((uint64 *)x + dec1(dummy, &rcx22));
