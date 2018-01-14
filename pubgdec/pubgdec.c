@@ -1,5 +1,5 @@
 /*
-pubgdec 1.03
+pubgdec 1.1
 */
 
 #ifdef _MSC_VER
@@ -189,42 +189,14 @@ void decinit(dummy *dummy) {
 }
 
 static uint16 get_v13(dummy *dummy, int128 rcx) {
-	uint64 v1;
 	uint v4;
 	int16 v5;
-	uint v6;
-	uint64 v7;
 	uint64 v8 = 0;
-	uint64 v9 = 0;
-	uint8 v11;
 	uint16 v13;
 	uint v14;
 	char v16;
-	int v19;
-	v1 = rcx.high;
-	v19 = DWORD1(rcx);
 	v4 = rcx.low;
 	v5 = WORD4(rcx);
-	v6 = 2067041945;
-	v7 = ((_DWORD)v1
-		+ v4
-		+ _HIDWORD(v1)
-		- 2145172163
-		* (uint)((uint64)(((v1 + v4 + (v1 >> 32)) * (uint128_t)0x469DEF623F2C51u >> 64)
-			+ ((uint64)(v1
-				+ v4
-				+ (v1 >> 32)
-				- ((v1 + v4 + (v1 >> 32))
-					* (uint128_t)0x469DEF623F2C51u >> 64)) >> 1)) >> 30)) ^ 0xFEA07C43;
-	do
-	{
-		v11 = v6 + v9++;
-		_LODWORD(v7) = ((READ_TABLE(BYTE2(v7)) | (((READ_TABLE((uint8)v7) << 8) | READ_TABLE(BYTE1(v7))) << 8)) << 8) | READ_TABLE(v7 >> 24);
-		v6 = READ_TABLE((uint64)v6 >> 24) | ((READ_TABLE(BYTE2(v6)) | (((READ_TABLE((uint8)v6) << 8) | READ_TABLE(BYTE1(v6))) << 8)) << 8);
-	} while (v9 < 3);
-	if ((v6 ^ (uint)v7) != v19) {
-		return 0;
-	}
 	v13 = v5 ^ ~(_WORD)v4 ^ 0xD25;
 	do
 	{
@@ -237,9 +209,6 @@ static uint16 get_v13(dummy *dummy, int128 rcx) {
 
 static uint64 dec1(dummy *dummy, int128 rcx22) {
 	uint16 v13 = get_v13(dummy, rcx22);
-	if (!v13) {
-		return 0;
-	}
 	return ~(
 		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(DEC_ADDR1)) ^
 		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(DEC_ADDR2)) ^
@@ -248,9 +217,6 @@ static uint64 dec1(dummy *dummy, int128 rcx22) {
 
 static uint64 dec2(dummy *dummy, int128 rcx23) {
 	uint16 v13 = get_v13(dummy, rcx23);
-	if (!v13) {
-		return 0;
-	}
 	return ~(
 		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(DEC_ADDR1)) ^
 		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(DEC_ADDR2)) ^
