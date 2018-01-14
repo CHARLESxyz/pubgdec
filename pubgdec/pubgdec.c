@@ -2,14 +2,20 @@
 pubgdec 1.02
 */
 
-// https://github.com/calccrypto/uint128_t
-#if !defined(__GNUC__) && defined(__cplusplus)
-#include "uint128_t.h"
-#endif
-
 #ifdef _MSC_VER
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4293)
+#endif
+
+#ifdef __GNUC__
+typedef unsigned __int128 uint128_t;
+#else
+#ifdef __cplusplus
+// https://github.com/calccrypto/uint128_t
+#include "uint128_t.h"
+#else
+#error uint128_t
+#endif
 #endif
 
 /*
@@ -156,16 +162,6 @@ typedef struct int128 {
 	int64 high;
 } int128;
 
-#ifdef __GNUC__
-typedef unsigned __int128 uint128;
-#else
-#ifdef __cplusplus
-typedef uint128_t uint128;
-#else
-#error uint128
-#endif
-#endif
-
 #define TABLE_SIZE 0x100
 
 typedef struct decrypt_struct {
@@ -215,12 +211,12 @@ static uint16 get_v13(dummy *dummy, int128 rcx) {
 		+ v4
 		+ HIDWORD(v1)
 		- 2145172163
-		* (uint)((uint64)(((v1 + v4 + (v1 >> 32)) * (uint128)0x469DEF623F2C51u >> 64)
+		* (uint)((uint64)(((v1 + v4 + (v1 >> 32)) * (uint128_t)0x469DEF623F2C51u >> 64)
 			+ ((uint64)(v1
 				+ v4
 				+ (v1 >> 32)
 				- ((v1 + v4 + (v1 >> 32))
-					* (uint128)0x469DEF623F2C51u >> 64)) >> 1)) >> 30)) ^ 0xFEA07C43;
+					* (uint128_t)0x469DEF623F2C51u >> 64)) >> 1)) >> 30)) ^ 0xFEA07C43;
 	v8 = 0;
 	v9 = 0;
 	do
