@@ -1,5 +1,5 @@
 /*
-pubgdec 1.01
+pubgdec 1.02
 */
 
 // https://github.com/calccrypto/uint128_t
@@ -178,67 +178,21 @@ static decrypt_struct g_decrypt;
 
 #define READ_TABLE(index) g_decrypt.table[index]
 
+// offsets
+#define DEC_TABLE 0x3AFF120
+#define DEC_XOR 0x3DEB690
+#define DEC_ADDR1 0x3DEBE90
+#define DEC_ADDR2 0x3DEB290
+#define DEC_ADDR3 0x3DEBA90
+
 // export
 void decinit(dummy *dummy) {
-	READ(GET_ADDR(0x3AFF120), g_decrypt.table, TABLE_SIZE);
-	g_decrypt.xor1 = READ32(700 + GET_ADDR(0x3DEB690));
-	g_decrypt.xor2 = READ32(924 + GET_ADDR(0x3DEB690));
+	READ(GET_ADDR(DEC_TABLE), g_decrypt.table, TABLE_SIZE);
+	g_decrypt.xor1 = READ32(700 + GET_ADDR(DEC_XOR));
+	g_decrypt.xor2 = READ32(924 + GET_ADDR(DEC_XOR));
 }
 
-static uint64 dec1(dummy *dummy, int128 rcx22) {
-	uint64 v1;
-	uint v4;
-	int16 v5;
-	uint v6;
-	uint64 v7;
-	uint64 v8;
-	uint64 v9;
-	uint8 v11;
-	uint16 v13;
-	uint v14;
-	char v16;
-	int v19;
-	v1 = rcx22.high;
-	v19 = DWORD1(rcx22);
-	v4 = rcx22.low;
-	v5 = WORD4(rcx22);
-	v6 = 2067041945;
-	v7 = ((_DWORD)v1
-		+ v4
-		+ HIDWORD(v1)
-		- 2145172163
-		* (uint)((uint64)(((v1 + v4 + (v1 >> 32)) * (uint128)0x469DEF623F2C51u >> 64)
-			+ ((uint64)(v1
-				+ v4
-				+ (v1 >> 32)
-				- ((v1 + v4 + (v1 >> 32))
-					* (uint128)0x469DEF623F2C51u >> 64)) >> 1)) >> 30)) ^ 0xFEA07C43;
-	v8 = 0;
-	v9 = 0;
-	do
-	{
-		v11 = v6 + v9++;
-		LODWORD(v7) = ((READ_TABLE(BYTE2(v7)) | (((READ_TABLE((uint8)v7) << 8) | READ_TABLE(BYTE1(v7))) << 8)) << 8) | READ_TABLE((v7 >> 24));
-		v6 = READ_TABLE((uint64)v6 >> 24) | ((READ_TABLE(BYTE2(v6)) | (((READ_TABLE((uint8)v6) << 8) | READ_TABLE(BYTE1(v6))) << 8)) << 8);
-	} while (v9 < 3);
-	if ((v6 ^ (uint)v7) != v19)
-	{
-		return 0;
-	}
-	v13 = v5 ^ ~(_WORD)v4 ^ 0xD25;
-	do
-	{
-		v14 = v13;
-		v16 = v8++ + 2;
-		v13 = READ_TABLE(READ_TABLE((v14 ^ 0x4400u) >> 8)) | (uint16)(READ_TABLE(READ_TABLE((uint8)(v14 ^ 0x55))) << 8);
-	} while (v8 < 5);
-	return ~(
-		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(0x3DEBE90)) ^
-		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(0x3DEB290)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(0x3DEBA90)) ^ g_decrypt.xor1)) % 0x2B;
-}
-
-static uint64 dec2(dummy *dummy, int128 rcx23) {
+static uint16 get_v13(dummy *dummy, int128 rcx) {
 	uint64 v1;
 	uint8 v3;
 	uint v4;
@@ -252,10 +206,10 @@ static uint64 dec2(dummy *dummy, int128 rcx23) {
 	uint v14;
 	char v16;
 	int v19;
-	v1 = rcx23.high;
-	v19 = DWORD1(rcx23);
-	v4 = rcx23.low;
-	v5 = WORD4(rcx23);
+	v1 = rcx.high;
+	v19 = DWORD1(rcx);
+	v4 = rcx.low;
+	v5 = WORD4(rcx);
 	v6 = 2067041945;
 	v7 = ((_DWORD)v1
 		+ v4
@@ -275,8 +229,7 @@ static uint64 dec2(dummy *dummy, int128 rcx23) {
 		LODWORD(v7) = ((READ_TABLE(BYTE2(v7)) | (((READ_TABLE((uint8)v7) << 8) | READ_TABLE(BYTE1(v7))) << 8)) << 8) | READ_TABLE(v7 >> 24);
 		v6 = READ_TABLE((uint64)v6 >> 24) | ((READ_TABLE(BYTE2(v6)) | (((READ_TABLE((uint8)v6) << 8) | READ_TABLE(BYTE1(v6))) << 8)) << 8);
 	} while (v9 < 3);
-	if ((v6 ^ (uint)v7) != v19)
-	{
+	if ((v6 ^ (uint)v7) != v19) {
 		return 0;
 	}
 	v13 = v5 ^ ~(_WORD)v4 ^ 0xD25;
@@ -286,10 +239,29 @@ static uint64 dec2(dummy *dummy, int128 rcx23) {
 		v16 = v8++ + 2;
 		v13 = READ_TABLE(READ_TABLE((v14 ^ 0x4400u) >> 8)) | (uint16)(READ_TABLE(READ_TABLE((uint8)(v14 ^ 0x55))) << 8);
 	} while (v8 < 5);
+	return v13;
+}
+
+static uint64 dec1(dummy *dummy, int128 rcx22) {
+	uint16 v13 = get_v13(dummy, rcx22);
+	if (!v13) {
+		return 0;
+	}
 	return ~(
-		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(0x3DEBE90)) ^
-		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(0x3DEB290)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(0x3DEBA90)) ^ g_decrypt.xor2)) % 0x2B;
+		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(DEC_ADDR1)) ^
+		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(DEC_ADDR2)) ^
+		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor1)) % 0x2B;
+}
+
+static uint64 dec2(dummy *dummy, int128 rcx23) {
+	uint16 v13 = get_v13(dummy, rcx23);
+	if (!v13) {
+		return 0;
+	}
+	return ~(
+		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(DEC_ADDR1)) ^
+		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(DEC_ADDR2)) ^
+		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor2)) % 0x2B;
 }
 
 // export
