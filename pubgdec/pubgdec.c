@@ -1,5 +1,5 @@
 /*
-pubgdec 1.11
+pubgdec 1.2
 */
 
 #ifdef _MSC_VER
@@ -151,33 +151,43 @@ typedef struct int128 {
 	int64 high;
 } int128;
 
-#define TABLE_SIZE 0x100
+#define TABLE8_SIZE 0x100
+#define TABLE32_SIZE 0x400
 
 typedef struct decrypt_struct {
-	uint8 table[TABLE_SIZE];
+	uint8 table8[TABLE8_SIZE];
+	uint32 table32_x[TABLE32_SIZE / 4];
+	uint32 table32_y[TABLE32_SIZE / 4];
+	uint32 table32_z[TABLE32_SIZE / 4];
 	uint32 xor1;
 	uint32 xor2;
 } decrypt_struct;
 
 static decrypt_struct g_decrypt;
 
-#define READ_TABLE(index) g_decrypt.table[index]
+#define READ_TABLE8(index) g_decrypt.table8[index]
+#define READ_TABLE32_X(index) g_decrypt.table32_x[index]
+#define READ_TABLE32_Y(index) g_decrypt.table32_y[index]
+#define READ_TABLE32_Z(index) g_decrypt.table32_z[index]
 
 // offsets
-#define DEC_TABLE 0x3AFF120
+#define DEC_TABLE8 0x3AFF120
+#define DEC_TABLE32_X 0x3DEBE90
+#define DEC_TABLE32_Y 0x3DEB290
+#define DEC_TABLE32_Z 0x3DEBA90
 #define DEC_XOR 0x3DEB690
-#define DEC_ADDR1 0x3DEBE90
-#define DEC_ADDR2 0x3DEB290
-#define DEC_ADDR3 0x3DEBA90
 
 // export
 void decinit(dummy *dummy) {
-	READ(GET_ADDR(DEC_TABLE), g_decrypt.table, TABLE_SIZE);
+	READ(GET_ADDR(DEC_TABLE8), g_decrypt.table8, TABLE8_SIZE);
+	READ(GET_ADDR(DEC_TABLE32_X), g_decrypt.table32_x, TABLE32_SIZE);
+	READ(GET_ADDR(DEC_TABLE32_Y), g_decrypt.table32_y, TABLE32_SIZE);
+	READ(GET_ADDR(DEC_TABLE32_Z), g_decrypt.table32_z, TABLE32_SIZE);
 	g_decrypt.xor1 = READ32(700 + GET_ADDR(DEC_XOR));
 	g_decrypt.xor2 = READ32(924 + GET_ADDR(DEC_XOR));
 }
 
-static uint16 get_v13(dummy *dummy, int128 rcx) {
+static uint16 get_v13(int128 rcx) {
 	uint v4;
 	int16 v5;
 	uint64 v8 = 0;
@@ -191,25 +201,25 @@ static uint16 get_v13(dummy *dummy, int128 rcx) {
 	{
 		v14 = v13;
 		v16 = v8++ + 2;
-		v13 = READ_TABLE(READ_TABLE((v14 ^ 0x4400u) >> 8)) | (uint16)(READ_TABLE(READ_TABLE((uint8)(v14 ^ 0x55))) << 8);
+		v13 = READ_TABLE8(READ_TABLE8((v14 ^ 0x4400u) >> 8)) | (uint16)(READ_TABLE8(READ_TABLE8((uint8)(v14 ^ 0x55))) << 8);
 	} while (v8 < 5);
 	return v13;
 }
 
-static uint64 dec1(dummy *dummy, int128 rcx22) {
-	uint16 v13 = get_v13(dummy, rcx22);
+static uint64 dec1(int128 rcx22) {
+	uint16 v13 = get_v13(rcx22);
 	return ~(
-		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(DEC_ADDR1)) ^
-		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(DEC_ADDR2)) ^
-		(READ32((uint64)(4) * (uint8)(_HIBYTE(v13) ^ 0x5A) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor1)) % 0x2B;
+		READ_TABLE32_X((uint8)(v13 ^ 0xBC)) ^
+		READ_TABLE32_Y((uint64)(v13 ^ 0xD7AF5ABC) >> 24) ^
+		(READ_TABLE32_Z((uint8)(_HIBYTE(v13) ^ 0x5A)) ^ g_decrypt.xor1)) % 0x2B;
 }
 
-static uint64 dec2(dummy *dummy, int128 rcx23) {
-	uint16 v13 = get_v13(dummy, rcx23);
+static uint64 dec2(int128 rcx23) {
+	uint16 v13 = get_v13(rcx23);
 	return ~(
-		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(DEC_ADDR1)) ^
-		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(DEC_ADDR2)) ^
-		(READ32((uint64)(4) * (uint8)(_HIBYTE(v13) ^ 0xE3) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor2)) % 0x2B;
+		READ_TABLE32_X((uint8)(v13 ^ 0xC)) ^
+		READ_TABLE32_Y((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) ^
+		(READ_TABLE32_Z((uint8)(_HIBYTE(v13) ^ 0xE3)) ^ g_decrypt.xor2)) % 0x2B;
 }
 
 // export
@@ -218,7 +228,7 @@ uint64 decptr(dummy *dummy, void *x) {
 	int128 rcx23;
 	READ((int128 *)x + 22, &rcx22, sizeof(int128));
 	READ((int128 *)x + 23, &rcx23, sizeof(int128));
-	uint64 xor1 = READ64((uint64 *)x + dec1(dummy, rcx22));
-	uint64 xor2 = dec2(dummy, rcx23);
+	uint64 xor1 = READ64((uint64 *)x + dec1(rcx22));
+	uint64 xor2 = dec2(rcx23);
 	return xor1 ^ xor2;
 }
