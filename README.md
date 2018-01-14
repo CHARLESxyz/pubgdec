@@ -1,5 +1,6 @@
 3.6.4.8
- 
+
+<pre><code>
 decinit();
  
 uworld = decptr(base_addr + 0x4054650);
@@ -15,3 +16,4 @@ for (index = 0; index < actor_count; ++index) {
 	actor = decptr(actor_list + (index * 0x180));
 	
 }
+</code></pre>
