@@ -77,70 +77,13 @@ typedef unsigned long long uint64;
 rpm
 */
 
-#define DUMMY_PID 1
-#define DUMMY_BASE_ADDR 2
-#define DUMMY_READ 3
-#define DUMMY_WRITE 4
+#define GET_ADDR(addr) (mem->getBaseAddr() + (addr))
 
-typedef struct dummy {
-	void *handle;
-	uint64 user_pid;
-	uint64 game_pid;
-	uint64 game_base_addr;
-} dummy;
-
-typedef struct dummy_request {
-	uint64 msg;
-	uint64 user_pid;
-	uint64 user_addr;
-	uint64 game_pid;
-	uint64 game_addr;
-	uint64 size;
-} dummy_request;
-
-static int dummy_read(dummy *dummy, void *game_addr, void *user_addr, uint64 size) {
-	dummy_request request;
-	DWORD written;
-	request.msg = DUMMY_READ;
-	request.user_pid = dummy->user_pid;
-	request.user_addr = (uint64)user_addr;
-	request.game_pid = dummy->game_pid;
-	request.game_addr = (uint64)game_addr;
-	request.size = size;
-	return WriteFile(dummy->handle, &request, sizeof(dummy_request), &written, NULL);
-}
-
-static uint8 dummy_read8(dummy *dummy, void *game_addr) {
-	uint8 ret = 0;
-	dummy_read(dummy, game_addr, &ret, 1);
-	return ret;
-}
-
-static uint16 dummy_read16(dummy *dummy, void *game_addr) {
-	uint16 ret = 0;
-	dummy_read(dummy, game_addr, &ret, 2);
-	return ret;
-}
-
-static uint32 dummy_read32(dummy *dummy, void *game_addr) {
-	uint32 ret = 0;
-	dummy_read(dummy, game_addr, &ret, 4);
-	return ret;
-}
-
-static uint64 dummy_read64(dummy *dummy, void *game_addr) {
-	uint64 ret = 0;
-	dummy_read(dummy, game_addr, &ret, 8);
-	return ret;
-}
-
-#define GET_ADDR(addr) (dummy->game_base_addr + (addr))
-
-#define READ(addr, dest, size) dummy_read(dummy, (void *)(addr), dest, size)
-#define READ8(addr) dummy_read8(dummy, (void *)(addr))
-#define READ16(addr) dummy_read16(dummy, (void *)(addr))
-#define READ32(addr) dummy_read32(dummy, (void *)(addr))
-#define READ64(addr) dummy_read64(dummy, (void *)(addr))
+#define READ(addr, dest, size) mem->rpmBlock((dest), (void *)(addr), (size))
+#define READ8(addr) mem->rpm<uint8>((void *)(addr))
+#define READ16(addr) mem->rpm<uint16>((void *)(addr))
+#define READ32(addr) mem->rpm<uint32>((void *)(addr))
+#define READ64(addr) mem->rpm<uint64>((void *)(addr))
 
 /*
 dec
@@ -178,7 +121,7 @@ static decrypt_struct g_decrypt;
 #define DEC_XOR 0x3DEB690
 
 // export
-void decinit(dummy *dummy) {
+void decinit(void) {
 	READ(GET_ADDR(DEC_TABLE8), g_decrypt.table8, TABLE8_SIZE);
 	READ(GET_ADDR(DEC_TABLE32_X), g_decrypt.table32_x, TABLE32_SIZE);
 	READ(GET_ADDR(DEC_TABLE32_Y), g_decrypt.table32_y, TABLE32_SIZE);
@@ -223,7 +166,7 @@ static uint64 dec2(int128 rcx23) {
 }
 
 // export
-uint64 decptr(dummy *dummy, void *x) {
+uint64 decptr(void *x) {
 	int128 rcx[2]; // 22, 23
 	READ((int128 *)x + 22, rcx, sizeof(rcx));
 	uint64 xor1 = READ64((uint64 *)x + dec1(rcx[0]));
