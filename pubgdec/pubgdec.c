@@ -1,5 +1,5 @@
 /*
-pubgdec 1.2
+pubgdec 1.21
 */
 
 #ifdef _MSC_VER
@@ -224,11 +224,9 @@ static uint64 dec2(int128 rcx23) {
 
 // export
 uint64 decptr(dummy *dummy, void *x) {
-	int128 rcx22;
-	int128 rcx23;
-	READ((int128 *)x + 22, &rcx22, sizeof(int128));
-	READ((int128 *)x + 23, &rcx23, sizeof(int128));
-	uint64 xor1 = READ64((uint64 *)x + dec1(rcx22));
-	uint64 xor2 = dec2(rcx23);
+	int128 rcx[2]; // 22, 23
+	READ((int128 *)x + 22, rcx, sizeof(rcx));
+	uint64 xor1 = READ64((uint64 *)x + dec1(rcx[0]));
+	uint64 xor2 = dec2(rcx[1]);
 	return xor1 ^ xor2;
 }
