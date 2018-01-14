@@ -1,5 +1,5 @@
 /*
-pubgdec 1.1
+pubgdec 1.11
 */
 
 #ifdef _MSC_VER
@@ -9,17 +9,6 @@ pubgdec 1.1
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
-#ifdef __GNUC__
-typedef unsigned __int128 uint128_t;
-#else
-#ifdef __cplusplus
-// https://github.com/calccrypto/uint128_t
-#include "uint128_t.h"
-#else
-#error rename "pubgdec.c" to "pubgdec.cpp" and include "uint128_t.cpp" to your project
-#endif
-#endif
 
 /*
 hexrays stuff
