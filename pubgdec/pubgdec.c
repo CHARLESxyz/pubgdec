@@ -1,11 +1,14 @@
 /*
-pubgdec 1.02
+pubgdec 1.03
 */
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4293)
 #endif
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 #ifdef __GNUC__
 typedef unsigned __int128 uint128_t;
@@ -14,7 +17,7 @@ typedef unsigned __int128 uint128_t;
 // https://github.com/calccrypto/uint128_t
 #include "uint128_t.h"
 #else
-#error uint128_t
+#error rename "pubgdec.c" to "pubgdec.cpp" and include "uint128_t.cpp" to your project
 #endif
 #endif
 
@@ -49,12 +52,14 @@ typedef unsigned long long uint64;
 #define WORDn(x, n)   (*((_WORD*)&(x) + n))
 #define DWORDn(x, n)  (*((_DWORD*)&(x) + n))
 
-#define LOBYTE(x) BYTEn(x, LOW_IND(x, _BYTE))
-#define LOWORD(x) WORDn(x, LOW_IND(x, _WORD))
-#define LODWORD(x) DWORDn(x, LOW_IND(x, _DWORD))
-#define HIBYTE(x) BYTEn(x, HIGH_IND(x, _BYTE))
-#define HIWORD(x) WORDn(x, HIGH_IND(x, _WORD))
-#define HIDWORD(x) DWORDn(x, HIGH_IND(x, _DWORD))
+// todo: 
+#define _LOBYTE(x) BYTEn(x, LOW_IND(x, _BYTE))
+#define _LOWORD(x) WORDn(x, LOW_IND(x, _WORD))
+#define _LODWORD(x) DWORDn(x, LOW_IND(x, _DWORD))
+#define _HIBYTE(x) BYTEn(x, HIGH_IND(x, _BYTE))
+#define _HIWORD(x) WORDn(x, HIGH_IND(x, _WORD))
+#define _HIDWORD(x) DWORDn(x, HIGH_IND(x, _DWORD))
+
 #define BYTE1(x) BYTEn(x, 1)
 #define BYTE2(x) BYTEn(x, 2)
 #define BYTE3(x) BYTEn(x, 3)
@@ -104,21 +109,16 @@ typedef struct dummy_request {
 	uint64 size;
 } dummy_request;
 
-#ifdef __cplusplus
-extern "C"
-#endif
-int __stdcall WriteFile(void *, const void *, uint, uint *, void *);
-
 static int dummy_read(dummy *dummy, void *game_addr, void *user_addr, uint64 size) {
 	dummy_request request;
-	uint written;
+	DWORD written;
 	request.msg = DUMMY_READ;
 	request.user_pid = dummy->user_pid;
 	request.user_addr = (uint64)user_addr;
 	request.game_pid = dummy->game_pid;
 	request.game_addr = (uint64)game_addr;
 	request.size = size;
-	return WriteFile(dummy->handle, &request, sizeof(dummy_request), &written, (void *)0);
+	return WriteFile(dummy->handle, &request, sizeof(dummy_request), &written, NULL);
 }
 
 static uint8 dummy_read8(dummy *dummy, void *game_addr) {
@@ -190,13 +190,12 @@ void decinit(dummy *dummy) {
 
 static uint16 get_v13(dummy *dummy, int128 rcx) {
 	uint64 v1;
-	uint8 v3;
 	uint v4;
 	int16 v5;
 	uint v6;
 	uint64 v7;
-	uint64 v8;
-	uint64 v9;
+	uint64 v8 = 0;
+	uint64 v9 = 0;
 	uint8 v11;
 	uint16 v13;
 	uint v14;
@@ -209,7 +208,7 @@ static uint16 get_v13(dummy *dummy, int128 rcx) {
 	v6 = 2067041945;
 	v7 = ((_DWORD)v1
 		+ v4
-		+ HIDWORD(v1)
+		+ _HIDWORD(v1)
 		- 2145172163
 		* (uint)((uint64)(((v1 + v4 + (v1 >> 32)) * (uint128_t)0x469DEF623F2C51u >> 64)
 			+ ((uint64)(v1
@@ -217,12 +216,10 @@ static uint16 get_v13(dummy *dummy, int128 rcx) {
 				+ (v1 >> 32)
 				- ((v1 + v4 + (v1 >> 32))
 					* (uint128_t)0x469DEF623F2C51u >> 64)) >> 1)) >> 30)) ^ 0xFEA07C43;
-	v8 = 0;
-	v9 = 0;
 	do
 	{
 		v11 = v6 + v9++;
-		LODWORD(v7) = ((READ_TABLE(BYTE2(v7)) | (((READ_TABLE((uint8)v7) << 8) | READ_TABLE(BYTE1(v7))) << 8)) << 8) | READ_TABLE(v7 >> 24);
+		_LODWORD(v7) = ((READ_TABLE(BYTE2(v7)) | (((READ_TABLE((uint8)v7) << 8) | READ_TABLE(BYTE1(v7))) << 8)) << 8) | READ_TABLE(v7 >> 24);
 		v6 = READ_TABLE((uint64)v6 >> 24) | ((READ_TABLE(BYTE2(v6)) | (((READ_TABLE((uint8)v6) << 8) | READ_TABLE(BYTE1(v6))) << 8)) << 8);
 	} while (v9 < 3);
 	if ((v6 ^ (uint)v7) != v19) {
@@ -246,7 +243,7 @@ static uint64 dec1(dummy *dummy, int128 rcx22) {
 	return ~(
 		READ32((uint64)(4) * (uint8)(v13 ^ 0xBC) + GET_ADDR(DEC_ADDR1)) ^
 		READ32(4 * ((uint64)(v13 ^ 0xD7AF5ABC) >> 24) + GET_ADDR(DEC_ADDR2)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0x5A) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor1)) % 0x2B;
+		(READ32((uint64)(4) * (uint8)(_HIBYTE(v13) ^ 0x5A) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor1)) % 0x2B;
 }
 
 static uint64 dec2(dummy *dummy, int128 rcx23) {
@@ -257,7 +254,7 @@ static uint64 dec2(dummy *dummy, int128 rcx23) {
 	return ~(
 		READ32((uint64)(4) * (uint8)(v13 ^ 0xC) + GET_ADDR(DEC_ADDR1)) ^
 		READ32(4 * ((uint64)(v13 ^ 0x5CE7E30Cu) >> 24) + GET_ADDR(DEC_ADDR2)) ^
-		(READ32((uint64)(4) * (uint8)(HIBYTE(v13) ^ 0xE3) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor2)) % 0x2B;
+		(READ32((uint64)(4) * (uint8)(_HIBYTE(v13) ^ 0xE3) + GET_ADDR(DEC_ADDR3)) ^ g_decrypt.xor2)) % 0x2B;
 }
 
 // export
